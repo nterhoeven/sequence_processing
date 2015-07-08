@@ -1,0 +1,19 @@
+* sequence_processing
+some scripts to process fasta and fastq sequences
+** remove duplicates
+This script takes a fasta file from STDIN, removes duplicated sequences
+and writes the output to STDOUT.
+
+Sequences will be deleted, if they have an identical header and an identical sequence.
+This script can also clean the fasta file: Linebreaks in the sequence as well as empty
+lines and leading whitespaces in headers (> id) are removed by default. Additionally,
+non ACGT charachters are converted to N. This feature can be skipped using the --no-convert
+option. The script also converts lowercase sequence characters to uppercase. This can be 
+skipped with the --no-up option.
+
+Use one the following commands for help:
+#+BEGIN_SRC sh
+./remove_dulicates --help
+perldoc ./remove_duplicates
+#+END_SRC
+
