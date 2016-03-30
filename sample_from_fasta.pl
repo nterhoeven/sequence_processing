@@ -23,6 +23,8 @@
 
 =over
 
+=back
+
 =head2 required
 
 =over
@@ -151,52 +153,70 @@ for(qw(in number-of-seqs)){
        pod2usage("required: --$_") unless defined ($opt{$_})
 };
 
+#set output file
+unless(exists $opt{outfile})
+{
+    $opt{"outfile"}=$opt{"in"}.".sampled-".$opt{"number-of-seqs"};
+}
 
 
-exit;
 #-----------------------------------------------------------------------------#
 # MAIN
 
-# $L->info('reading input from STDIN');
-# $/="\n>";
+$L->info('reading input from ',$opt{in});
 
-# my%fasta;
+open(IN,'<',$opt{in}) or $L->logdie($!);
+$/="\n>";
+my%fasta;
 
-# while(<STDIN>)
-# {
-#     my@obj=split(/\n/,$_);
+while(<IN>)
+{
+    my@obj=split(/\n/,$_);
     
-#     #get header and remove > and leading whitespace
-#     my$id=shift(@obj);
-#     $id=~s/^>//g;
-#     $id=~s/^\s+//g;
+    #get header and remove > and leading whitespace
+    my$id=shift(@obj);
+    $id=~s/^>//g;
+    $id=~s/^\s+//g;
 
-#     my$seq=join("",@obj);
-#     $seq=~s/>//g;
-#     $seq=uc($seq) unless $opt{'no-up'};
-#     $seq=~s/[^ACGTacgt]/N/g unless $opt{'no-convert'};
+    my$seq=join("",@obj);
+    $seq=~s/>//g;
+    $seq=uc($seq) if $opt{'uppercase'};
+    $seq=~s/[^ACGTacgt]/N/g if $opt{'convert-to-N'};
     
-#     if(exists $fasta{$id})
-#     {
-# 	if($fasta{$id} eq $seq)
-# 	{
-# 	    $L->info("found duplicate for $id");
-# 	}
-# 	else
-# 	{
-# 	    $L->warn("found two sequences with the same ID ($id), but different sequences
-# using '$id.2' as header");
-# 	    print ">",$id.".2","\n",$seq,"\n";
-# 	}
-#     }
-#     else
-#     {
-# 	print ">",$id,"\n",$seq,"\n";
-# 	$fasta{$id}=$seq;
-#     }
-# }
+    $L->warn("found duplicate for $id.\nYou might want to deduplicate your fasta file first.") if exists $fasta{$id};
 
-# $L->info("done");
+    $fasta{$id}=$seq;
+}
+
+close IN or $L->logdie($!);
+
+$L->info("finished reading");
+$L->info("starting sampling ",$opt{"number-of-seqs"}," sequences");
+$L->info("writing output to ",$opt{outfile});
+
+
+open(OUT,'>',$opt{outfile}) or $L->logdie($!);
+my$count=0;
+my@IDs=keys(%fasta);
+my$numSeqs=@IDs+0;
+
+
+while($count < $opt{"number-of-seqs"})
+{
+    my$index=int(rand($numSeqs)); #get random index
+    $L->debug("index: ",$index);
+    my$id=$IDs[$index];
+    print OUT ">",$id,"\n",$fasta{$id},"\n";  #print sequence
+
+    #remove index from pool 
+    splice(@IDs, $index, 1);
+    $numSeqs--;
+    $count++;
+}
+
+close OUT or $L->logdie($!);
+
+$L->info("done");
 
 
 
