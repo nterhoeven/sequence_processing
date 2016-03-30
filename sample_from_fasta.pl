@@ -2,36 +2,57 @@
 
 =head1 NAME
 
-    remove duplicates
+    sample from fasta
 
 =head1 DESCRIPTION
 
-    This script takes a fasta file from STDIN, removes duplicated sequences
-    and writes the output to STDOUT.
+    This script takes a fasta file and a number of sequences (n) to sample. It writes n 
+    randomly selected sequences to the output file.
 
-    Sequences will be deleted, if they have an identical header and an identical sequence.
     This script can also clean the fasta file: Linebreaks in the sequence as well as empty
     lines and leading whitespaces in headers (> id) are removed by default. Additionally,
-    non ACGT charachters are converted to N. This feature can be skipped using the --no-convert
-    option. The script also converts lowercase sequence characters to uppercase. This can be 
-    skipped with the --no-up option.
+    non ACGT charachters can be converted to N and lowercase sequence characters can be 
+    converted to uppercase.
     
 
 =head1 SYNOPSIS
     
-    cat <input.fa> | remove_duplicates [--no-convert --no-up --debug] > output.fa
+    ./sample_from_fasta.pl [--convert-to-N --uppercase --debug --outfile <outfile.fa>] --in <input.fa> --number-of-seqs|-n <Number of Sequences to sample>
 
 =head1 OPTIONS
 
 =over
 
-=item --no-convert
+=head2 required
 
-    skip converting non ACGT charachters to N
+=over
 
-=item --no-up
+=item --in
 
-    skip converting lowercase acgt to uppercase ACGT
+    Fasta file to be sampled from
+
+=item --number-of-seqs | -n
+
+    Number of sequences, that should be written to <outfile.fa>
+
+=back
+
+=head2 optional
+
+=over
+
+=item --outfile
+
+    Name of the output file. Default: input.fa.sampled-n 
+    (Where n is the number specified)
+
+=item --convert-to-N
+
+    convert non ACGT charachters to N
+
+=item --uppercase
+
+    convert lowercase acgt to uppercase ACGT
 
 =item --debug
 
@@ -69,7 +90,6 @@ use strict;
 use warnings;
 no warnings 'qw';
 
-use Carp;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use Pod::Usage;
 use Log::Log4perl qw(:no_extra_logdie_message);
@@ -77,13 +97,6 @@ use Log::Log4perl::Level;
 
 use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
-
-use FindBin qw($RealBin);
-use lib "$RealBin/../lib/";
-
-use File::Basename;
-use File::Copy;
-
 
 #-----------------------------------------------------------------------------#
 # Globals
@@ -106,8 +119,11 @@ Log::Log4perl->init( \q(
 my%opt;
 GetOptions( # use %opt (Cfg) as defaults
 	\%opt, qw(
-                no-up
-                no-convert
+                uppercase
+                convert-to-N
+                in|i=s
+                outfile|o=s
+                number-of-seqs|n=s
 		version|V!
 		debug|D!
 		help|h!
@@ -130,51 +146,57 @@ $L->debug('Verbose level set to DEBUG');
 
 $L->debug(Dumper(\%opt));
 
+# required stuff  
+for(qw(in number-of-seqs)){
+       pod2usage("required: --$_") unless defined ($opt{$_})
+};
 
 
+
+exit;
 #-----------------------------------------------------------------------------#
 # MAIN
 
-$L->info('reading input from STDIN');
-$/="\n>";
+# $L->info('reading input from STDIN');
+# $/="\n>";
 
-my%fasta;
+# my%fasta;
 
-while(<STDIN>)
-{
-    my@obj=split(/\n/,$_);
+# while(<STDIN>)
+# {
+#     my@obj=split(/\n/,$_);
     
-    #get header and remove > and leading whitespace
-    my$id=shift(@obj);
-    $id=~s/^>//g;
-    $id=~s/^\s+//g;
+#     #get header and remove > and leading whitespace
+#     my$id=shift(@obj);
+#     $id=~s/^>//g;
+#     $id=~s/^\s+//g;
 
-    my$seq=join("",@obj);
-    $seq=~s/>//g;
-    $seq=uc($seq) unless $opt{'no-up'};
-    $seq=~s/[^ACGTacgt]/N/g unless $opt{'no-convert'};
+#     my$seq=join("",@obj);
+#     $seq=~s/>//g;
+#     $seq=uc($seq) unless $opt{'no-up'};
+#     $seq=~s/[^ACGTacgt]/N/g unless $opt{'no-convert'};
     
-    if(exists $fasta{$id})
-    {
-	if($fasta{$id} eq $seq)
-	{
-	    $L->info("found duplicate for $id");
-	}
-	else
-	{
-	    $L->warn("found two sequences with the same ID ($id), but different sequences
-using '$id.2' as header");
-	    print ">",$id.".2","\n",$seq,"\n";
-	}
-    }
-    else
-    {
-	print ">",$id,"\n",$seq,"\n";
-	$fasta{$id}=$seq;
-    }
-}
+#     if(exists $fasta{$id})
+#     {
+# 	if($fasta{$id} eq $seq)
+# 	{
+# 	    $L->info("found duplicate for $id");
+# 	}
+# 	else
+# 	{
+# 	    $L->warn("found two sequences with the same ID ($id), but different sequences
+# using '$id.2' as header");
+# 	    print ">",$id.".2","\n",$seq,"\n";
+# 	}
+#     }
+#     else
+#     {
+# 	print ">",$id,"\n",$seq,"\n";
+# 	$fasta{$id}=$seq;
+#     }
+# }
 
-$L->info("done");
+# $L->info("done");
 
 
 
