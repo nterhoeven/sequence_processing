@@ -17,3 +17,17 @@ Use one the following commands for help:
 perldoc ./remove_duplicates
 #+END_SRC
 
+** sample from fasta
+This script takes a fasta file and a number of sequences (n) to sample. It writes n 
+randomly selected sequences to the output file.
+  
+This script can also clean the fasta file: Linebreaks in the sequence as well as empty
+lines and leading whitespaces in headers (> id) are removed by default. Additionally,
+non ACGT charachters can be converted to N and lowercase sequence characters can be 
+converted to uppercase.
+
+Use the following command for help:
+#+BEGIN_SRC sh
+./sample_from_fasta.pl --help
+#+END_SRC
+
