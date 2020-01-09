@@ -142,6 +142,8 @@ my%fasta;
 
 while(<STDIN>)
 {
+    next unless $_=~/\w/ ; #ignore empty lines before the first sequence 
+
     my@obj=split(/\n/,$_);
     
     #get header and remove > and leading whitespace
